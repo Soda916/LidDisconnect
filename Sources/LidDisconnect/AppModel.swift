@@ -8,7 +8,7 @@ import ServiceManagement
 struct EventEntry: Identifiable {
     let id = UUID()
     let date = Date()
-    let message: String
+    let message: AppText
 }
 
 @MainActor
@@ -17,12 +17,13 @@ final class AppModel: ObservableObject {
     @Published private(set) var selected: Set<BluetoothDeviceIdentity>
     @Published private(set) var devices: [DeviceSnapshot] = []
     @Published private(set) var lidClosed: Bool?
-    @Published private(set) var lidError: String?
-    @Published private(set) var bluetoothStatus = "尚未讀取藍牙裝置"
+    @Published private(set) var lidError: AppText?
+    @Published private(set) var bluetoothStatus: AppText = .key("bluetooth.initial")
     @Published private(set) var authorization = CBManager.authorization
     @Published private(set) var isRefreshing = false
     @Published private(set) var isDisconnecting = false
-    @Published private(set) var lastResult = "請選定裝置，先按「測試斷線」確認耳機行為。"
+    @Published private(set) var lastResult: AppText = .key("disconnect.initial")
+    @Published private(set) var language: AppLanguage
     @Published private(set) var events: [EventEntry] = []
     @Published private(set) var loginEnabled = SMAppService.mainApp.status == .enabled
     @Published private(set) var loginNeedsApproval = SMAppService.mainApp.status == .requiresApproval
@@ -41,19 +42,32 @@ final class AppModel: ObservableObject {
     private var refreshTask: Task<Void, Never>?
 
     init() {
+        language = preferences.language
         isEnabled = preferences.isEnabled
         selected = preferences.selectedDevices
+    }
+
+    var localizer: Localizer { Localizer(language: language) }
+    var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0" }
+    func t(_ key: String, _ arguments: String...) -> String {
+        localizer.render(.localized(key, arguments.map(AppText.literal)))
+    }
+    func t(_ message: AppText) -> String { localizer.render(message) }
+    func deviceName(_ device: DeviceSnapshot) -> String { device.name.isEmpty ? t("device.unnamed") : device.name }
+    func setLanguage(_ value: AppLanguage) {
+        language = value
+        preferences.language = value
     }
 
     func start() {
         guard !started else { return }
         started = true
-        record("LidDisconnect 0.1 啟動；\(isEnabled ? "自動功能啟用" : "暫停中")。")
+        record(.key(isEnabled ? "log.start.enabled" : "log.start.paused", .literal(version)))
         monitor.onStateChange = { [weak self] closed in
             guard let self else { return }
             self.lidClosed = closed
             self.lidError = nil
-            self.record("實際上蓋：\(closed ? "闔蓋" : "開蓋")。")
+            self.record(.key("log.lid", .key(closed ? "state.closed" : "state.open")))
             let shouldDisconnect = self.policy.receive(isClosed: closed, enabled: self.isEnabled)
             if shouldDisconnect { self.disconnectSelected(automatic: true) }
         }
@@ -67,7 +81,7 @@ final class AppModel: ObservableObject {
         permission.onChange = { [weak self] in self?.refresh() }
         bluetoothEvents.onChange = { [weak self] in self?.refresh() }
         bluetoothEvents.onError = { [weak self] in
-            self?.record("藍牙事件註冊失敗；仍可使用手動重新整理。")
+            self?.record(.key("log.eventsFailed"))
         }
         monitor.start()
         refresh()
@@ -78,7 +92,7 @@ final class AppModel: ObservableObject {
         if !value { cancelOperation() }
         isEnabled = value
         preferences.isEnabled = value
-        record(value ? "已啟用：下次實際闔蓋時中斷所選裝置。" : "自動功能已暫停。")
+        record(.key(value ? "log.enabled" : "log.paused"))
     }
 
     func setSelected(_ id: BluetoothDeviceIdentity, selected value: Bool) {
@@ -95,7 +109,7 @@ final class AppModel: ObservableObject {
 
     func requestBluetooth() {
         guard Bundle.main.bundleURL.pathExtension == "app" else {
-            lastResult = "請使用 scripts/build-app.sh 產生的 .app，才能正確要求藍牙權限。"
+            lastResult = .key("permission.bundle")
             record(lastResult)
             return
         }
@@ -114,7 +128,7 @@ final class AppModel: ObservableObject {
         guard authorization == .allowedAlways else {
             bluetoothEvents.stop()
             devices = []
-            bluetoothStatus = authorization == .notDetermined ? "請授權藍牙存取，再讀取已配對裝置。" : "藍牙權限未允許；請至系統設定開啟。"
+            bluetoothStatus = .key(authorization == .notDetermined ? "bluetooth.permission" : "bluetooth.denied")
             if isEnabled { pause(reason: bluetoothStatus) }
             return
         }
@@ -130,14 +144,14 @@ final class AppModel: ObservableObject {
                     guard !Task.isCancelled, CBManager.authorization == .allowedAlways else { break }
                     self.devices = snapshot
                     self.bluetoothEvents.synchronize(snapshot)
-                    self.bluetoothStatus = self.devices.isEmpty ? "沒有可用的已配對裝置。" : "\(self.devices.count) 個已配對裝置"
+                    self.bluetoothStatus = self.devices.isEmpty ? .key("bluetooth.empty") : .key("bluetooth.count", .literal(String(self.devices.count)))
                 } catch is CancellationError {
                     break
                 } catch {
                     self.devices = []
                     self.bluetoothEvents.synchronize([])
-                    self.bluetoothStatus = error.localizedDescription
-                    self.record(error.localizedDescription)
+                    self.bluetoothStatus = Self.errorText(error)
+                    self.record(self.bluetoothStatus)
                 }
             } while self.refreshGate.finish()
             self.refreshGate = RefreshGate()
@@ -147,7 +161,7 @@ final class AppModel: ObservableObject {
     func disconnectSelected(automatic: Bool = false) {
         guard !isDisconnecting, !selected.isEmpty else { return }
         guard CBManager.authorization == .allowedAlways else {
-            pause(reason: "藍牙權限未允許，已略過斷線。")
+            pause(reason: .key("error.permission"))
             return
         }
         let ids = selected.sorted { $0.address < $1.address }
@@ -155,8 +169,8 @@ final class AppModel: ObservableObject {
         let token = UUID()
         operationID = token
         isDisconnecting = true
-        lastResult = "正在中斷 \(ids.count) 個所選裝置並觀察 8 秒…"
-        record(automatic ? "收到實際闔蓋事件，開始斷線。" : "使用者啟動手動斷線測試。")
+        lastResult = .key("disconnect.progress", .literal(String(ids.count)))
+        record(.key(automatic ? "log.auto" : "log.manual"))
         operation = Task { [weak self] in
             guard let self else { return }
             defer {
@@ -171,20 +185,21 @@ final class AppModel: ObservableObject {
                 do {
                     let report = try await self.bluetooth.disconnect(id)
                     guard !Task.isCancelled, self.operationID == token else { return }
-                    let label = names[id] ?? "所選裝置"
-                    self.lastResult = "\(label)：\(report.message)"
+                    let name = names[id] ?? ""
+                    let label: AppText = name.isEmpty ? .key("device.unnamed") : .literal(name)
+                    self.lastResult = .key("result.device", label, report.message)
                     self.record(self.lastResult)
                     if report.needsReview {
                         self.isEnabled = false
                         self.preferences.isEnabled = false
-                        self.record("需人工檢查，自動功能已暫停；不再嘗試其他裝置。")
+                        self.record(.key("log.review"))
                         return
                     }
                 } catch is CancellationError {
                     return
                 } catch {
                     guard self.operationID == token else { return }
-                    self.lastResult = error.localizedDescription
+                    self.lastResult = Self.errorText(error)
                     self.record(self.lastResult)
                     self.isEnabled = false
                     self.preferences.isEnabled = false
@@ -196,20 +211,20 @@ final class AppModel: ObservableObject {
 
     func setLoginEnabled(_ enabled: Bool) {
         guard Bundle.main.bundleURL.pathExtension == "app" else {
-            record("登入啟動需要使用打包後的 LidDisconnect.app。"); return
+            record(.key("login.bundle")); return
         }
         do {
             if enabled { try SMAppService.mainApp.register() }
             else { try SMAppService.mainApp.unregister() }
             updateLoginStatus()
-            record(loginNeedsApproval ? "請在系統設定核准登入項目。" : "登入啟動設定已更新。")
-        } catch { record("登入啟動設定失敗：\(error.localizedDescription)") }
+            record(.key(loginNeedsApproval ? "login.approval" : "login.updated"))
+        } catch { record(.key("login.error", .literal(error.localizedDescription))) }
     }
 
     func openLoginSettings() { SMAppService.openSystemSettingsLoginItems() }
 
     func copyDiagnostics() {
-        let text = events.reversed().map { "\($0.date.ISO8601Format()) \($0.message)" }.joined(separator: "\n")
+        let text = events.reversed().map { "\($0.date.ISO8601Format()) \(t($0.message))" }.joined(separator: "\n")
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
     }
@@ -224,11 +239,11 @@ final class AppModel: ObservableObject {
     private func cancelOperation() {
         operation?.cancel()
         operationID = UUID()
-        if isDisconnecting { lastResult = "後續操作已取消；已送出的斷線要求無法撤回。" }
+        if isDisconnecting { lastResult = .key("operation.cancelled") }
         isDisconnecting = false
     }
 
-    private func pause(reason: String) {
+    private func pause(reason: AppText) {
         cancelOperation()
         isEnabled = false
         preferences.isEnabled = false
@@ -241,9 +256,14 @@ final class AppModel: ObservableObject {
         loginNeedsApproval = SMAppService.mainApp.status == .requiresApproval
     }
 
-    private func record(_ message: String) {
+    private static func errorText(_ error: any Error) -> AppText {
+        if let error = error as? BluetoothError { return error.message }
+        return .key("error.system", .literal(error.localizedDescription))
+    }
+
+    private func record(_ message: AppText) {
         events.insert(EventEntry(message: message), at: 0)
         if events.count > 60 { events.removeLast(events.count - 60) }
-        logger.info("\(message, privacy: .private)")
+        logger.info("\(self.t(message), privacy: .private)")
     }
 }

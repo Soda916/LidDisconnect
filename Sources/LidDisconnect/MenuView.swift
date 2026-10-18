@@ -13,30 +13,31 @@ struct MenuView: View {
                     Label("LidDisconnect", systemImage: "laptopcomputer")
                         .font(.headline)
                     Spacer()
-                    Text("v0.1").foregroundStyle(.secondary)
+                    Text("v\(model.version)").foregroundStyle(.secondary)
                 }
-                Text("\(model.isEnabled ? "啟用中" : "已暫停") · 上蓋\(lidText)")
+                Text(model.t("status", model.t(model.isEnabled ? "state.enabled" : "state.paused"), lidText))
                     .font(.subheadline)
                 if let error = model.lidError {
-                    Text(error).foregroundStyle(.red)
+                    Text(model.t(error)).foregroundStyle(.red)
                 }
-                Toggle("闔蓋時自動斷線", isOn: Binding(
+                Toggle(model.t("auto.title"), isOn: Binding(
                     get: { model.isEnabled }, set: { model.setEnabled($0) }
                 ))
                 .disabled(!model.isEnabled && (model.selected.isEmpty || model.lidClosed == nil || model.authorization != .allowedAlways))
-                Text("先測試耳機斷線及是否自行重連，再啟用自動功能。開蓋不會主動連線。")
+                Text(model.t("auto.help"))
                     .font(.caption).foregroundStyle(.secondary)
 
                 Divider()
                 HStack {
-                    Text("所選裝置（\(model.selected.count)）").font(.headline)
+                    Text(model.t("devices.selected", String(model.selected.count))).font(.headline)
                     Spacer()
-                    Button("重新整理") { model.refresh() }
+                    Button(model.t("refresh")) { model.refresh() }
                         .disabled(model.isRefreshing || model.isDisconnecting)
                 }
-                Text(model.bluetoothStatus).font(.caption).foregroundStyle(.secondary)
+                Text(model.t("refresh.hint")).font(.caption).foregroundStyle(.secondary)
+                Text(model.t(model.bluetoothStatus)).font(.caption).foregroundStyle(.secondary)
                 if model.authorization != .allowedAlways {
-                    Button(model.authorization == .notDetermined ? "允許藍牙存取" : "開啟藍牙隱私設定") {
+                    Button(model.t(model.authorization == .notDetermined ? "permission.allow" : "permission.settings")) {
                         model.requestBluetooth()
                     }
                 }
@@ -46,8 +47,8 @@ struct MenuView: View {
                         set: { model.setSelected(device.id, selected: $0) }
                     )) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(device.name)
-                            Text("\(device.id.address) · \(device.connected ? "已連線" : "未連線")")
+                            Text(model.deviceName(device))
+                            Text("\(device.id.address) · \(model.t(device.connected ? "state.connected" : "state.disconnected"))")
                                 .font(.caption.monospaced()).foregroundStyle(.secondary)
                         }
                     }
@@ -56,43 +57,54 @@ struct MenuView: View {
                 }
                 ForEach(missingDevices) { id in
                     HStack {
-                        Text("\(id.address) · 目前無法讀取").font(.caption.monospaced())
+                        Text(model.t("device.unavailable", id.address)).font(.caption.monospaced())
                         Spacer()
-                        Button("移除") { model.setSelected(id, selected: false) }
+                        Button(model.t("remove")) { model.setSelected(id, selected: false) }
                             .disabled(model.isDisconnecting)
                     }
                 }
                 HStack {
-                    Button("測試斷線所選裝置") { model.disconnectSelected() }
+                    Button(model.t("disconnect.test")) { model.disconnectSelected() }
                         .disabled(model.selected.isEmpty || model.isDisconnecting || model.authorization != .allowedAlways)
                     if model.isDisconnecting {
                         ProgressView().controlSize(.small)
-                        Button("停止後續操作") { model.setEnabled(false) }
+                        Button(model.t("disconnect.stop")) { model.setEnabled(false) }
                     }
                 }
-                Text(model.lastResult).font(.caption).textSelection(.enabled)
+                Text(model.t(model.lastResult)).font(.caption).textSelection(.enabled)
 
                 Divider()
-                Toggle("登入時啟動", isOn: Binding(
+                Toggle(model.t("login.title"), isOn: Binding(
                     get: { model.loginEnabled || model.loginNeedsApproval },
                     set: { model.setLoginEnabled($0) }
                 ))
                 .disabled(Bundle.main.bundleURL.pathExtension != "app")
                 if model.loginNeedsApproval {
-                    Button("核准登入項目…") { model.openLoginSettings() }
+                    Button(model.t("login.approve")) { model.openLoginSettings() }
                 }
-                DisclosureGroup("最近操作紀錄") {
+                DisclosureGroup(model.t("history")) {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(model.events.prefix(15)) { event in
-                            Text("\(event.date.formatted(date: .omitted, time: .standard)) \(event.message)")
+                            Text("\(event.date.formatted(Date.FormatStyle(date: .omitted, time: .standard).locale(Locale(identifier: model.localizer.language.rawValue)))) \(model.t(event.message))")
                                 .font(.caption).textSelection(.enabled)
                         }
                     }
                 }
                 HStack {
-                    Button("複製診斷紀錄") { model.copyDiagnostics() }
+                    Button(model.t("copy")) { model.copyDiagnostics() }
                     Spacer()
-                    Button("結束") {
+                    Picker(model.t("language"), selection: Binding(
+                        get: { model.language }, set: { model.setLanguage($0) }
+                    )) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language == .automatic ? model.t("language.system") : language.nativeName).tag(language)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .frame(maxWidth: 140)
+                    .accessibilityLabel(model.t("language"))
+                    Button(model.t("quit")) {
                         model.stop()
                         NSApplication.shared.terminate(nil)
                     }
@@ -107,9 +119,9 @@ struct MenuView: View {
 
     private var lidText: String {
         switch model.lidClosed {
-        case true: "已闔蓋"
-        case false: "已開啟"
-        case nil: "未知"
+        case true: model.t("state.closed")
+        case false: model.t("state.open")
+        case nil: model.t("state.unknown")
         }
     }
 

@@ -2,11 +2,12 @@ import Foundation
 import IOKit
 import IOKit.pwr_mgt
 import CPlatform
+import LidDisconnectCore
 
 @MainActor
 final class LidStateMonitor {
     var onStateChange: ((Bool) -> Void)?
-    var onError: ((String) -> Void)?
+    var onError: ((AppText) -> Void)?
     private(set) var state: Bool?
     private var service: io_service_t = 0
     private var notifier: io_object_t = 0
@@ -16,13 +17,13 @@ final class LidStateMonitor {
     func start() {
         guard port == nil else { return }
         service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
-        guard service != 0 else { fail("無法取得電源管理服務"); return }
+        guard service != 0 else { fail(.key("error.lid.service")); return }
         guard let createdPort = IONotificationPortCreate(kIOMainPortDefault) else {
-            fail("無法建立闔蓋事件通知"); return
+            fail(.key("error.lid.port")); return
         }
         port = createdPort
         guard let runLoopSource = IONotificationPortGetRunLoopSource(createdPort)?.takeUnretainedValue() else {
-            fail("無法建立闔蓋事件來源"); return
+            fail(.key("error.lid.source")); return
         }
         source = runLoopSource
         CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
@@ -39,11 +40,11 @@ final class LidStateMonitor {
             },
             Unmanaged.passUnretained(self).toOpaque(), &notifier
         )
-        guard result == kIOReturnSuccess else { fail("闔蓋事件註冊失敗：\(result)"); return }
+        guard result == kIOReturnSuccess else { fail(.key("error.lid.register", .literal(String(result)))); return }
         guard let value = IORegistryEntryCreateCFProperty(
             service, kAppleClamshellStateKey as CFString, kCFAllocatorDefault, 0
         )?.takeRetainedValue() as? Bool else {
-            fail("此硬體未提供實際闔蓋狀態"); return
+            fail(.key("error.lid.unsupported")); return
         }
         deliver(value)
     }
@@ -54,7 +55,7 @@ final class LidStateMonitor {
         onStateChange?(closed)
     }
 
-    private func fail(_ message: String) {
+    private func fail(_ message: AppText) {
         stop()
         onError?(message)
     }

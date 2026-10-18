@@ -18,13 +18,16 @@ import Testing
     defer { defaults.removePersistentDomain(forName: suite) }
     let settings = Preferences(defaults: defaults)
     #expect(!settings.isEnabled)
+    #expect(settings.language == .automatic)
     #expect(settings.selectedDevices.isEmpty)
     let first = try #require(BluetoothDeviceIdentity(address: "AA:BB:CC:DD:EE:01"))
     let second = try #require(BluetoothDeviceIdentity(address: "AA:BB:CC:DD:EE:02"))
     settings.isEnabled = true
+    settings.language = .japanese
     settings.selectedDevices = [first, second]
     let restored = Preferences(defaults: defaults)
     #expect(restored.isEnabled)
+    #expect(restored.language == .japanese)
     #expect(restored.selectedDevices == [first, second])
     defaults.set(Data("invalid".utf8), forKey: "selectedDevices")
     #expect(restored.selectedDevices.isEmpty)

@@ -3,12 +3,13 @@ import PackageDescription
 
 let package = Package(
     name: "LidDisconnect",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "LidDisconnect", targets: ["LidDisconnect"])
     ],
     targets: [
-        .target(name: "LidDisconnectCore"),
+        .target(name: "LidDisconnectCore", resources: [.process("Resources")]),
         .target(name: "CPlatform", publicHeadersPath: "include"),
         .executableTarget(
             name: "LidDisconnect",

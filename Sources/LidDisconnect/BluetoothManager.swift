@@ -8,20 +8,20 @@ struct DeviceSnapshot: Identifiable, Sendable {
     let connected: Bool
 }
 
-enum BluetoothError: LocalizedError {
+enum BluetoothError: Error {
     case unavailable
     case missingDevice
 
-    var errorDescription: String? {
+    var message: AppText {
         switch self {
-        case .unavailable: "藍牙未開啟或控制器暫時無法使用。"
-        case .missingDevice: "裝置已不在配對清單；已略過斷線。"
+        case .unavailable: .key("error.controller")
+        case .missingDevice: .key("error.device")
         }
     }
 }
 
 struct DisconnectReport: Sendable {
-    let message: String
+    let message: AppText
     let verified: Bool
     let needsReview: Bool
 }
@@ -34,7 +34,7 @@ actor BluetoothManager {
         let snapshots = nativeDevices().compactMap { device -> DeviceSnapshot? in
             guard let address = device.addressString,
                   let identity = BluetoothDeviceIdentity(address: address) else { return nil }
-            return DeviceSnapshot(id: identity, name: device.name ?? "未命名裝置", connected: device.isConnected())
+            return DeviceSnapshot(id: identity, name: device.name ?? "", connected: device.isConnected())
         }
         // Defend against duplicate records as well as duplicate display names.
         return Dictionary(snapshots.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -47,7 +47,7 @@ actor BluetoothManager {
         // Resolve only against paired devices now, never from a name or arbitrary address.
         guard let device = findPaired(identity) else { throw BluetoothError.missingDevice }
         guard device.isConnected() else {
-            return DisconnectReport(message: "已斷線，無需操作。", verified: true, needsReview: false)
+            return DisconnectReport(message: .key("disconnect.skip"), verified: true, needsReview: false)
         }
         try Task.checkCancellation()
         let result = device.closeConnection()
@@ -66,17 +66,17 @@ actor BluetoothManager {
         }
         if result != kIOReturnSuccess {
             return DisconnectReport(
-                message: "斷線 API 失敗（\(result)）；目前\(lastConnected ? "仍連線" : "顯示已斷線")。請檢查權限或手動驗證。",
+                message: .key(lastConnected ? "disconnect.failedConnected" : "disconnect.failedDisconnected", .literal(String(result))),
                 verified: false, needsReview: true
             )
         }
         if reconnected {
-            return DisconnectReport(message: "觀察到裝置自行重新連線；已停止自動斷線，請檢查耳機／macOS 設定。", verified: false, needsReview: true)
+            return DisconnectReport(message: .key("disconnect.reconnected"), verified: false, needsReview: true)
         }
         if lastConnected {
-            return DisconnectReport(message: "API 回傳成功，但 8 秒後仍連線；已停止自動斷線，需真機調查。", verified: false, needsReview: true)
+            return DisconnectReport(message: .key("disconnect.stillConnected"), verified: false, needsReview: true)
         }
-        return DisconnectReport(message: "已觀察到斷線，8 秒內未發現重新連線。", verified: true, needsReview: false)
+        return DisconnectReport(message: .key("disconnect.success"), verified: true, needsReview: false)
     }
 
     private func nativeDevices() -> [IOBluetoothDevice] {

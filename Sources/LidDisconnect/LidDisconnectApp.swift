@@ -1,11 +1,18 @@
 import AppKit
 import SwiftUI
+import LidDisconnectCore
 
 @main
 enum EntryPoint {
     @MainActor static func main() {
         if CommandLine.arguments.contains("--probe-lid") {
             LidDiagnostics.run()
+        } else if CommandLine.arguments.contains("--check-localizations") {
+            for language in AppLanguage.allCases where language != .automatic {
+                let value = Localizer(language: language).text("quit")
+                guard value != "quit" else { print("Missing localization: \(language.rawValue)"); exit(1) }
+                print("\(language.rawValue): \(value)")
+            }
         } else {
             LidDisconnectApp.main()
         }
@@ -48,7 +55,7 @@ private enum LidDiagnostics {
         }
         monitor.onError = { message in
             failed = true
-            print("ERROR: \(message)")
+            print("ERROR: \(Localizer().render(message))")
         }
         print("Lid-only probe (\(Int(duration)) seconds). No Bluetooth calls or sleep assertions.")
         monitor.start()

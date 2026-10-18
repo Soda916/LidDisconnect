@@ -6,6 +6,11 @@ public struct Preferences {
 
     public init(defaults: UserDefaults = .standard) { self.defaults = defaults }
 
+    public var language: AppLanguage {
+        get { AppLanguage(rawValue: defaults.string(forKey: "language") ?? "system") ?? .automatic }
+        nonmutating set { defaults.set(newValue.rawValue, forKey: "language") }
+    }
+
     public var isEnabled: Bool {
         get { defaults.object(forKey: "enabled") as? Bool ?? false }
         nonmutating set { defaults.set(newValue, forKey: "enabled") }
