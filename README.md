@@ -12,6 +12,8 @@ A native macOS menu bar app that disconnects **only your selected Bluetooth devi
 
 **v1.0.0 · macOS 14 or later**
 
+Quit any older LidDisconnect instance before installing or updating.
+
 | Download | Architecture |
 | --- | --- |
 | [DMG](https://github.com/Soda916/LidDisconnect/releases/download/v1.0.0/LidDisconnect-v1.0.0-macOS-Universal.dmg) | Universal: Apple Silicon and Intel |

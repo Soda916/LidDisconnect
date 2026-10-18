@@ -11,6 +11,8 @@
 
 **v1.0.0 · macOS 14 或更新版本**
 
+安裝或更新前，請先從選單結束舊版 LidDisconnect。
+
 | 下載 | 系統架構 |
 | --- | --- |
 | [DMG](https://github.com/Soda916/LidDisconnect/releases/download/v1.0.0/LidDisconnect-v1.0.0-macOS-Universal.dmg) | Universal，包含 Apple Silicon 與 Intel |

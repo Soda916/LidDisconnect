@@ -6,7 +6,7 @@ Native macOS menu bar app. Physical lid closure disconnects only user-selected p
 
 ## Current phase
 
-v1.0.0 publicly published with verified downloadable artifacts. GitHub CI found an older Swift source-compatibility issue; explicit optional Bool patterns fix it without a runtime behavior change. Retain published tag/history and artifacts; verify CI on the follow-up compatibility commit. User explicitly authorized PUBLIC visibility, Apache-2.0 and a downloadable release on 2026-10-18, superseding the initial private-only requirement. Release version does not certify untested hardware behavior.
+v1.0.0 publicly published with verified downloadable artifacts. Follow-up source compatibility fixes also passed GitHub CI on the older toolchain. Published tag/history and validated assets are unchanged. User explicitly authorized PUBLIC visibility, Apache-2.0 and a downloadable release on 2026-10-18, superseding the initial private-only requirement. Release version does not certify untested hardware behavior.
 
 The follow-up narrows CONTRIBUTING priorities to security and performance only. Other feature ideas are welcome for discussion; no plugin system or plugin API is provided.
 
@@ -67,6 +67,7 @@ Post-release CI also exposed older SwiftPM lowercasing/normalizing localization 
 | --- | --- |
 | Actually verified | Public lid notification registration; initial physical_lid=open from host and read-only DMG executable probe |
 | Build/unit verified | swift build and swift test, 9 tests passed on Xcode 27.1 |
+| Cloud CI verified | https://github.com/Soda916/LidDisconnect/actions/runs/39141395015 succeeded on e50c6f8, including tests and native app/localization packaging on macos-15 |
 | Translation verified | All 8 tables share all 66 keys/placeholders; detection, saved override and semantic history re-render tested |
 | Universal build verified | arm64 + x86_64 Mach-O slices; each verified via lipo; vtool reports minos 14.0 for both |
 | App/resource verified | plist, deep strict codesign verification; --check-localizations from packaged app, DMG and extracted ZIP all pass without depending on developer build paths |
@@ -96,12 +97,14 @@ Do not commit artifacts; upload them to GitHub release v1.0.0 using docs/release
 - Previous v0.1 delivery: 5faf67b (and earlier atomic commits)
 - Current packaging/CI work unit updates this file; obtain its commit hash via git log after commit.
 - b2a618c build: release v1.0.0 as a localized Universal macOS app (public release tag).
+- 5827c4f fix: use explicit optional patterns for older Swift compilers
+- e50c6f8 fix: resolve localized resources across SwiftPM layouts (CI passed)
 
 ## Remaining actions
 
-1. Finish/verify the older Swift 6 source compatibility follow-up in CI. Published v1.0.0 tag and validated binary assets remain unchanged; do not rewrite them.
+1. Delivery complete: source compatibility follow-up passed CI. Published v1.0.0 tag and validated binary assets remain unchanged; do not rewrite them.
 2. Visibility, license recognition, release metadata and public download hash checks are complete.
-3. Record final CI outcome here.
+3. README and release notes disclose the source tag's Swift 6.4 build environment; older Swift 6 source builders should use current main. Final follow-up is documentation-only.
 4. User hardware acceptance: run manual test while paused after confirming headphone name/address; then test real lid closure under their existing Amphetamine configuration. Public API failures require evidence/limitations and user decision before any change of approach.
 
 Rebuild/start: bash scripts/build-app.sh; open build/LidDisconnect.app. Release: bash scripts/build-release.sh. The old v0.1 dist/ bundle may still be running; do not mistake its process/UI for v1.0.
