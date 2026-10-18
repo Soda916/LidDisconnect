@@ -35,6 +35,9 @@ Phase 1 — feasibility validation; v0.1 implementation underway.
 - Bluetooth controller runs on a separate actor; resolves selected normalized addresses against the current paired list before calling only `closeConnection()`.
 - After a single disconnect attempt, observes connection at ~1, 3, 8 seconds; records API failures, persistent connection or observed reconnection. No forced retry or controller power changes.
 - Settings default to paused and store validated device addresses. 5 unit tests now pass, including settings round trip/corrupt data and address normalization.
+- Implemented SwiftUI `MenuBarExtra` with device selection, pause/enable, manual disconnect, bounded result observation, recent events/copy diagnostics, Bluetooth permission request, and `SMAppService.mainApp` login-item controls.
+- Added `--probe-lid [seconds]` read-only diagnostics mode, which never invokes Bluetooth or modifies sleep behavior.
+- Actually verified on host: `swift run LidDisconnect --probe-lid 2` successfully registered IOKit notifications and read `physical_lid=open` at 2026-10-18T14:59:36Z. No close/open transition has been induced yet.
 
 ## Not completed
 
@@ -43,6 +46,7 @@ Phase 1 — feasibility validation; v0.1 implementation underway.
 - Physical lid event verification while Amphetamine prevents sleep.
 - Verification that `IOBluetoothDevice.closeConnection()` disconnects Cleer ARC II and whether it immediately reconnects.
 - Production UI, login item integration, logging, and integration tests.
+- UI and login item code are implemented and compile; visual runtime, permission flow and login relaunch remain to be verified. This supersedes the production UI item above.
 
 ## Technical decisions
 
@@ -68,7 +72,7 @@ Phase 1 — feasibility validation; v0.1 implementation underway.
 
 ## Recent Git commit
 
-`dae2b44 feat: monitor physical lid transitions with public IOKit notifications`; this work unit adds background Bluetooth validation and persisted device identity.
+`0ce6566 feat: validate selected Bluetooth disconnections off the main thread`; this work unit adds the native menu bar interface and lid probe.
 
 ## Next recommended action
 
