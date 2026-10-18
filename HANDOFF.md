@@ -6,14 +6,14 @@ LidDisconnect is a native macOS menu bar app intended to detect the physical Mac
 
 ## Current phase
 
-Phase 1 — feasibility validation and project bootstrap.
+Phase 1 — feasibility validation; v0.1 implementation underway.
 
 ## Environment
 
 - Host: Apple Silicon, macOS SDK target reported as macOS 27.0.0
 - Swift: 6.4
-- Xcode: not currently available; `xcode-select` points to Command Line Tools
-- GitHub CLI: installed; shell verification still reports the current token as invalid
+- Xcode 27.1 is installed and selected at `/Applications/Xcode.app/Contents/Developer`.
+- Private repository verified: https://github.com/Soda916/LidDisconnect
 
 ## Architecture and important files
 
@@ -54,13 +54,14 @@ Phase 1 — feasibility validation and project bootstrap.
 ## Test status
 
 - Actually verified: environment inspection only.
-- Compile verified: failed before source compilation because the active Command Line Tools SDK and Swift compiler versions do not match; the Swift module cache path is also not writable.
+- Source compilation reproduced an actual bug: `pairedDevices()` returns `[Any]!`; added a checked cast to `IOBluetoothDevice`. Placeholder methods were not the compiler error.
+- Restricted execution cannot access compiler caches; use approved elevated build execution.
 - Not verified: all lid, sleep-prevention, Bluetooth, reconnection, and UI behavior.
 - Known failures: GitHub authentication is invalid in the current shell; `xcodebuild` is unavailable with the active developer directory; build has not reached source compilation.
 
 ## Recent Git commit
 
-No commit yet; repository initialized locally with branch `main` and remote `origin`.
+`0a81210 chore: bootstrap native macOS app` (pushed to private origin/main).
 
 ## Next recommended action
 

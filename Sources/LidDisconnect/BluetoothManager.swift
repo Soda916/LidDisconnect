@@ -7,8 +7,9 @@ struct BluetoothDeviceIdentity: Hashable, Codable {
 
 final class BluetoothManager {
     func pairedDevices() -> [BluetoothDeviceIdentity] {
-        IOBluetoothDevice.pairedDevices().compactMap { device in
-            guard let address = device.addressString else { return nil }
+        (IOBluetoothDevice.pairedDevices() ?? []).compactMap { item in
+            guard let device = item as? IOBluetoothDevice,
+                  let address = device.addressString else { return nil }
             return BluetoothDeviceIdentity(address: address)
         }
     }
