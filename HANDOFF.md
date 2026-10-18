@@ -38,6 +38,9 @@ v0.1 executable validation build implemented. Core/UI code is complete for this 
 - Added public IOBluetooth connect notifications and disconnect subscriptions for all currently connected paired devices; event bursts debounce 150 ms and coalesce in-flight refreshes. Manual refresh retained. Added a pure refresh gate test.
 - Added eight fully self-translated native `.lproj` string tables (en, zh-Hant, zh-Hans, ja, ko, de, fr, es), including status/errors/history and OS Bluetooth purpose strings. Default detects preferred system languages; manual override persists and appears immediately left of Quit. Semantic stored messages re-render after language changes. No translation API or external LLM used.
 - Nine tests pass, including locale detection, all 66 keys/format placeholders in every language, live message translation and saved language preference.
+- Added Apache-2.0 LICENSE/NOTICE with owner authorization. English root README/CONTRIBUTING/SECURITY/CHANGELOG and Traditional Chinese counterparts plus docs/ and GitHub templates follow the read-only reference project's layout. No GPL/commercial license or plugin code was copied.
+- CONTRIBUTING review focuses only on security and performance, per the user's follow-up. Other ideas remain welcome; no plugin system/API is provided.
+- Documentation instructs trusted users to use Apple's per-app Open Anyway flow; it does not recommend global Gatekeeper/SIP changes or indiscriminate quarantine clearing.
 
 - Created/verified private GitHub repository; used conventional atomic commits.
 - Reproduced and fixed actual build bug: `pairedDevices()` returns `[Any]!` and needs a checked device cast. The placeholder did not cause that compiler error.

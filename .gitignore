@@ -1,4 +1,43 @@
+# Xcode / SwiftPM
 .build/
-.DS_Store
+.swiftpm/
+build/
+build_output/
 dist/
+Packages/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+
+# Generated binaries / distribution artifacts
+/LidDisconnect
+*.dmg
+*.zip
+*.dSYM/
+*.swiftmodule
+*.swiftdoc
+*.swiftsourceinfo
+
+# macOS
+.DS_Store
+.AppleDouble
+._*
+.Spotlight-V100
+.Trashes
+
+# Local logs, scratch and credentials
+*.log
+*.log.*
+logs/
+.tmp_uploads/
+tmp_uploads/
+scratch/
+.scratch/
+.env
+.env.*
+!.env.example
+*.p12
+*.p8
+*.key
+*.pem
 
