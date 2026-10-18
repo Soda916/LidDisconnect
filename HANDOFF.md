@@ -6,6 +6,8 @@ LidDisconnect is a native macOS menu bar app intended to detect the physical Mac
 
 ## Current phase
 
+v1.0 preparation requested: event-based Bluetooth refresh, eight self-translated UI languages, Apache-2.0, public repository and downloadable DMG. User explicitly authorized visibility and license changes on 2026-10-18. Reference project is read-only; follow its documentation layout, not its unrelated GPL/commercial licensing or implementation instructions.
+
 v0.1 executable validation build implemented. Core/UI code is complete for this version; the original Phase 1 hardware acceptance gate is still pending. Do not label the Cleer ARC II integration production-verified until the user completes the hardware matrix below.
 
 ## Environment
@@ -32,6 +34,8 @@ v0.1 executable validation build implemented. Core/UI code is complete for this 
 - `dist/LidDisconnect.app`: generated, gitignored runnable local app. Already launched during this session.
 
 ## Completed
+
+- Added public IOBluetooth connect notifications and disconnect subscriptions for all currently connected paired devices; event bursts debounce 150 ms and coalesce in-flight refreshes. Manual refresh retained. Added a pure refresh gate test.
 
 - Created/verified private GitHub repository; used conventional atomic commits.
 - Reproduced and fixed actual build bug: `pairedDevices()` returns `[Any]!` and needs a checked device cast. The placeholder did not cause that compiler error.

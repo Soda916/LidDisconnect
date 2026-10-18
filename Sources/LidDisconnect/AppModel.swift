@@ -31,6 +31,8 @@ final class AppModel: ObservableObject {
     private let monitor = LidStateMonitor()
     private let bluetooth = BluetoothManager()
     private let permission = BluetoothAuthorization()
+    private let bluetoothEvents = BluetoothEventMonitor()
+    private var refreshGate = RefreshGate()
     private let logger = Logger(subsystem: "com.soda916.LidDisconnect", category: "events")
     private var policy = LidPolicy()
     private var started = false
@@ -63,6 +65,10 @@ final class AppModel: ObservableObject {
             self.pause(reason: message)
         }
         permission.onChange = { [weak self] in self?.refresh() }
+        bluetoothEvents.onChange = { [weak self] in self?.refresh() }
+        bluetoothEvents.onError = { [weak self] in
+            self?.record("藍牙事件註冊失敗；仍可使用手動重新整理。")
+        }
         monitor.start()
         refresh()
     }
@@ -106,26 +112,35 @@ final class AppModel: ObservableObject {
         authorization = CBManager.authorization
         updateLoginStatus()
         guard authorization == .allowedAlways else {
+            bluetoothEvents.stop()
             devices = []
             bluetoothStatus = authorization == .notDetermined ? "請授權藍牙存取，再讀取已配對裝置。" : "藍牙權限未允許；請至系統設定開啟。"
             if isEnabled { pause(reason: bluetoothStatus) }
             return
         }
-        guard !isRefreshing else { return }
+        bluetoothEvents.start()
+        guard refreshGate.request() else { return }
         isRefreshing = true
         refreshTask = Task { [weak self] in
             guard let self else { return }
             defer { self.isRefreshing = false }
-            do {
-                self.devices = try await self.bluetooth.pairedDevices()
-                self.bluetoothStatus = self.devices.isEmpty ? "沒有可用的已配對裝置。" : "\(self.devices.count) 個已配對裝置"
-            } catch is CancellationError {
-                return
-            } catch {
-                self.devices = []
-                self.bluetoothStatus = error.localizedDescription
-                self.record(error.localizedDescription)
-            }
+            repeat {
+                do {
+                    let snapshot = try await self.bluetooth.pairedDevices()
+                    guard !Task.isCancelled, CBManager.authorization == .allowedAlways else { break }
+                    self.devices = snapshot
+                    self.bluetoothEvents.synchronize(snapshot)
+                    self.bluetoothStatus = self.devices.isEmpty ? "沒有可用的已配對裝置。" : "\(self.devices.count) 個已配對裝置"
+                } catch is CancellationError {
+                    break
+                } catch {
+                    self.devices = []
+                    self.bluetoothEvents.synchronize([])
+                    self.bluetoothStatus = error.localizedDescription
+                    self.record(error.localizedDescription)
+                }
+            } while self.refreshGate.finish()
+            self.refreshGate = RefreshGate()
         }
     }
 
@@ -202,6 +217,7 @@ final class AppModel: ObservableObject {
     func stop() {
         cancelOperation()
         refreshTask?.cancel()
+        bluetoothEvents.stop()
         monitor.stop()
     }
 
