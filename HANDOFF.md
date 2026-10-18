@@ -6,7 +6,7 @@ Native macOS menu bar app. Physical lid closure disconnects only user-selected p
 
 ## Current phase
 
-v1.0.0 implementation, localization and distributable artifacts verified locally; GitHub publication is the remaining delivery step in this work unit. User explicitly authorized PUBLIC visibility, Apache-2.0 and a downloadable release on 2026-10-18. This supersedes the initial private-only requirement. Release version does not certify untested hardware behavior.
+v1.0.0 publicly published with verified downloadable artifacts. GitHub CI found an older Swift source-compatibility issue; explicit optional Bool patterns fix it without a runtime behavior change. Retain published tag/history and artifacts; verify CI on the follow-up compatibility commit. User explicitly authorized PUBLIC visibility, Apache-2.0 and a downloadable release on 2026-10-18, superseding the initial private-only requirement. Release version does not certify untested hardware behavior.
 
 The follow-up narrows CONTRIBUTING priorities to security and performance only. Other feature ideas are welcome for discussion; no plugin system or plugin API is provided.
 
@@ -15,6 +15,8 @@ The follow-up narrows CONTRIBUTING priorities to security and performance only. 
 - Host Apple Silicon; Xcode 27.1 selected; Swift 6.4; SDK macOS 27.0.
 - Deployment target macOS 14.0 verified in both Universal binary slices with vtool.
 - Repository: https://github.com/Soda916/LidDisconnect
+- Public visibility verified, disabled=false, GitHub recognizes Apache-2.0. The brief push rejection immediately after visibility change resolved on retry without further settings changes.
+- Release: https://github.com/Soda916/LidDisconnect/releases/tag/v1.0.0 (published, not draft or prerelease), tag b2a618c4335b324d5c59691a2a6ba4a9a97fce95.
 - Reference folder /Users/dustlee/program/DynamicWallPaper was read-only. Used its English root + zh-TW/ + docs/ layout. Its GPL/commercial terms, plugin implementation and broad quarantine-removal instructions were not copied.
 - Codex sandbox restricts .git, compiler caches and external access: use approved require_escalated commands where required, never chmod 777 as a workaround.
 
@@ -67,6 +69,7 @@ The follow-up narrows CONTRIBUTING priorities to security and performance only. 
 | Universal build verified | arm64 + x86_64 Mach-O slices; each verified via lipo; vtool reports minos 14.0 for both |
 | App/resource verified | plist, deep strict codesign verification; --check-localizations from packaged app, DMG and extracted ZIP all pass without depending on developer build paths |
 | Artifact verified | hdiutil verify DMG; read-only mount contains App, Applications symlink, INSTALL.txt, LICENSE/NOTICE; ZIP unpack/signature/localizations verified; SHA-256 checks pass |
+| Public downloads verified | Downloaded DMG/ZIP streams match local hashes and GitHub asset digests; sizes 416891 / 385673 bytes |
 | Previous launch smoke | v0.1 app launched and survived; v1.0 actual visible UI/hardware acceptance still pending |
 | Not verified | Cleer ARC II audio/multipoint slot release/reconnect, actual lid transitions with Amphetamine, hardware Bluetooth connect/disconnect notification delivery, login relaunch, Intel/macOS 14 runtime, downloaded Gatekeeper flow |
 
@@ -90,12 +93,13 @@ Do not commit artifacts; upload them to GitHub release v1.0.0 using docs/release
 - 3c37db7 docs: adopt Apache-2.0 and bilingual project documentation
 - Previous v0.1 delivery: 5faf67b (and earlier atomic commits)
 - Current packaging/CI work unit updates this file; obtain its commit hash via git log after commit.
+- b2a618c build: release v1.0.0 as a localized Universal macOS app (public release tag).
 
 ## Remaining actions
 
-1. Commit inspected packaging/CI files, make existing repository public with explicitly authorized gh repo edit, push, publish release v1.0.0 with DMG/ZIP/checksums.
-2. Verify public visibility, license recognition, asset metadata/download availability and CI.
-3. Update this handoff with publication URLs/outcome.
+1. Finish/verify the older Swift 6 source compatibility follow-up in CI. Published v1.0.0 tag and validated binary assets remain unchanged; do not rewrite them.
+2. Visibility, license recognition, release metadata and public download hash checks are complete.
+3. Record final CI outcome here.
 4. User hardware acceptance: run manual test while paused after confirming headphone name/address; then test real lid closure under their existing Amphetamine configuration. Public API failures require evidence/limitations and user decision before any change of approach.
 
 Rebuild/start: bash scripts/build-app.sh; open build/LidDisconnect.app. Release: bash scripts/build-release.sh. The old v0.1 dist/ bundle may still be running; do not mistake its process/UI for v1.0.

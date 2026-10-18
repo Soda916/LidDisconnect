@@ -2,6 +2,10 @@
 
 # Changelog
 
+## Unreleased
+
+- Source compatibility: spell optional Bool switch patterns explicitly for older Swift 6 compilers. No runtime behavior change; the v1.0.0 artifacts were built successfully with Swift 6.4 and are unchanged.
+
 ## 1.0.0 — 2026-10-18
 
 - Refresh devices automatically on public Bluetooth connection/disconnection notifications; retain manual refresh.

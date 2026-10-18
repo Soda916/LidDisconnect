@@ -119,8 +119,8 @@ struct MenuView: View {
 
     private var lidText: String {
         switch model.lidClosed {
-        case true: model.t("state.closed")
-        case false: model.t("state.open")
+        case .some(true): model.t("state.closed")
+        case .some(false): model.t("state.open")
         case nil: model.t("state.unknown")
         }
     }
