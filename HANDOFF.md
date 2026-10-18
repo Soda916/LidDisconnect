@@ -1,113 +1,101 @@
 # LidDisconnect Handoff
 
-## Project goal
+## Goal and non-negotiable behavior
 
-LidDisconnect is a native macOS menu bar app intended to detect the physical MacBook lid state and disconnect only user-selected Bluetooth devices when the lid closes. It must not disable the Bluetooth controller, interfere with sleep or background services, use private APIs, or depend on external executables.
+Native macOS menu bar app. Physical lid closure disconnects only user-selected paired Bluetooth devices using public Apple APIs. Never power off Bluetooth, infer lid closure from sleep/display events, alter sleep/Amphetamine/network/background services, invoke external runtime utilities or use private APIs. No automatic reconnect on lid open.
 
 ## Current phase
 
-v1.0 preparation requested: event-based Bluetooth refresh, eight self-translated UI languages, Apache-2.0, public repository and downloadable DMG. User explicitly authorized visibility and license changes on 2026-10-18. Reference project is read-only; follow its documentation layout, not its unrelated GPL/commercial licensing or implementation instructions.
+v1.0.0 implementation, localization and distributable artifacts verified locally; GitHub publication is the remaining delivery step in this work unit. User explicitly authorized PUBLIC visibility, Apache-2.0 and a downloadable release on 2026-10-18. This supersedes the initial private-only requirement. Release version does not certify untested hardware behavior.
 
-v0.1 executable validation build implemented. Core/UI code is complete for this version; the original Phase 1 hardware acceptance gate is still pending. Do not label the Cleer ARC II integration production-verified until the user completes the hardware matrix below.
+The follow-up narrows CONTRIBUTING priorities to security and performance only. Other feature ideas are welcome for discussion; no plugin system or plugin API is provided.
 
-## Environment
+## Environment and repository
 
-- Host: Apple Silicon; SDK macOS 27.0, deployment target macOS 14
-- Swift: 6.4
-- Xcode 27.1 is installed and selected at `/Applications/Xcode.app/Contents/Developer`.
-- Private repository verified: https://github.com/Soda916/LidDisconnect
+- Host Apple Silicon; Xcode 27.1 selected; Swift 6.4; SDK macOS 27.0.
+- Deployment target macOS 14.0 verified in both Universal binary slices with vtool.
+- Repository: https://github.com/Soda916/LidDisconnect
+- Reference folder /Users/dustlee/program/DynamicWallPaper was read-only. Used its English root + zh-TW/ + docs/ layout. Its GPL/commercial terms, plugin implementation and broad quarantine-removal instructions were not copied.
+- Codex sandbox restricts .git, compiler caches and external access: use approved require_escalated commands where required, never chmod 777 as a workaround.
 
-## Architecture and important files
+## Architecture and files
 
-- `Package.swift`: SwiftPM executable, core library, C bridge, and Swift Testing target; no third-party dependencies.
-- `Sources/LidDisconnect/LidDisconnectApp.swift`: SwiftUI `MenuBarExtra` entry point and read-only `--probe-lid` mode.
-- `Sources/LidDisconnect/AppModel.swift`: main-actor coordination, permission status, selection, cancellation, OSLog/events, and login item controls.
-- `Sources/LidDisconnect/MenuView.swift`: native device selection/status/results interface.
-- `Sources/LidDisconnect/LidStateMonitor.swift`: public IOKit notification registration, initial state read, cleanup.
-- `Sources/LidDisconnect/BluetoothManager.swift`: separate actor for paired-device discovery, per-device disconnection and bounded observation.
-- `Sources/LidDisconnect/BluetoothAuthorization.swift`: explicit user-triggered CoreBluetooth permission request; does not scan or connect.
-- `Sources/LidDisconnectCore/`: independently tested transition policy, normalized/validated address identity, and UserDefaults preferences.
-- `Sources/CPlatform/`: tiny public-SDK macro bridge.
-- `Tests/LidDisconnectCoreTests/`: 5 Swift Testing tests.
-- `Packaging/Info.plist`, `scripts/build-app.sh`: local signed `.app` packaging and Bluetooth privacy purpose string.
-- `README.md`: build/start commands and hardware acceptance procedure.
-- `dist/LidDisconnect.app`: generated, gitignored runnable local app. Already launched during this session.
+- Package.swift: executable, core library/resources, public C macro bridge, test target; no third-party package dependencies.
+- Sources/LidDisconnect/LidDisconnectApp.swift: SwiftUI MenuBarExtra entry and --probe-lid / --check-localizations diagnostic modes.
+- AppModel.swift / MenuView.swift: main-actor state, user selection, cancellation, saved language, login item and diagnostics UI.
+- LidStateMonitor.swift: public IOPMrootDomain notification + AppleClamshellState; deduplicated initial state and events on main run loop.
+- BluetoothEventMonitor.swift: public global connect notifications and connected paired-device disconnect subscriptions; 150 ms burst debounce.
+- BluetoothManager.swift: actor isolates blocking classic Bluetooth calls, checks controller availability and re-resolves selected addresses against current paired devices.
+- Sources/LidDisconnectCore/: LidPolicy, RefreshGate, validated normalized identity, Preferences, Localizer and AppText.
+- Sources/LidDisconnectCore/Resources/: 8 native .lproj tables; 66 keys each, plus OS permission purpose translations.
+- Sources/CPlatform/: bridges public clamshell SDK macro Swift cannot import. No hardcoded private message constants.
+- Tests/LidDisconnectCoreTests/: 9 tests.
+- Packaging/Info.plist: version 1.0.0, build 100, menu-bar-only, macOS 14+, localized Bluetooth purpose.
+- scripts/build-app.sh: native or Universal bundle in build/LidDisconnect.app with resources/license/notice and ad-hoc signing.
+- scripts/build-release.sh: Universal release, drag-to-Applications DMG, ZIP, SHA256SUMS.txt.
+- README.md and zh-TW/README.md: downloads, first launch, language selection, hardware caveats, building.
+- CONTRIBUTING/SECURITY/CHANGELOG plus zh-TW/ counterparts; docs/ARCHITECTURE, TESTING, RELEASING and matching zh-TW/docs/.
+- docs/releases/v1.0.0.md: release body in English and Traditional Chinese.
+- .github/: issue/PR templates and minimal read-only macOS build/test CI.
+- LICENSE/NOTICE: Apache-2.0, Copyright 2026 Soda916 and contributors.
+- HANDOFF.md intentionally remains at repository root per the user's handoff requirement.
 
-## Completed
+## Completed work and decisions
 
-- Added public IOBluetooth connect notifications and disconnect subscriptions for all currently connected paired devices; event bursts debounce 150 ms and coalesce in-flight refreshes. Manual refresh retained. Added a pure refresh gate test.
-- Added eight fully self-translated native `.lproj` string tables (en, zh-Hant, zh-Hans, ja, ko, de, fr, es), including status/errors/history and OS Bluetooth purpose strings. Default detects preferred system languages; manual override persists and appears immediately left of Quit. Semantic stored messages re-render after language changes. No translation API or external LLM used.
-- Nine tests pass, including locale detection, all 66 keys/format placeholders in every language, live message translation and saved language preference.
-- Added Apache-2.0 LICENSE/NOTICE with owner authorization. English root README/CONTRIBUTING/SECURITY/CHANGELOG and Traditional Chinese counterparts plus docs/ and GitHub templates follow the read-only reference project's layout. No GPL/commercial license or plugin code was copied.
-- CONTRIBUTING review focuses only on security and performance, per the user's follow-up. Other ideas remain welcome; no plugin system/API is provided.
-- Documentation instructs trusted users to use Apple's per-app Open Anyway flow; it does not recommend global Gatekeeper/SIP changes or indiscriminate quarantine clearing.
+- Corrected initial pairedDevices() [Any] cast bug; original failure was not caused by a placeholder.
+- Real public lid monitoring; initial closed state never disconnects. Later open→closed transition required, including after enabling while closed.
+- Public per-device closeConnection(), only selected confirmed paired addresses. No forced retries or arbitrary-name targeting.
+- One close call followed by connection samples at about 1, 3, 8 seconds. Failure, persistent connection or observed reconnect pauses automation/stops batch.
+- Bluetooth connection/disconnection notifications trigger refresh even with menu closed; manual Refresh retained. RefreshGate coalesces updates received during active reads rather than dropping them. No steady polling.
+- Eight UI languages: English, Traditional/Simplified Chinese, Japanese, Korean, German, French, Spanish. Automatic follows preferred macOS languages, fallback English; manual persisted selector immediately LEFT of Quit.
+- AppText stores semantic messages, so existing errors/status/history re-render when switching languages. OS-provided raw error detail may still follow the OS language.
+- All translations authored directly by the agent; no translation API, external LLM, paid translation service or runtime network dependency.
+- CoreBluetooth requests permission/controller status only; no scan/connect behavior. IOBluetooth handles classic devices.
+- OSLog uses private messages; menu keeps 60 events, displays 15 and can copy full current-session diagnostics.
+- SMAppService.mainApp login item; user should install to a fixed location before registering.
+- Local ad-hoc signature, no Developer ID/notarization. Trusted users use System Settings > Privacy & Security > Open Anyway for this app. No global Gatekeeper/SIP bypass recommended or performed.
+- Generated build/, dist/, caches, binaries, local logs and credentials are gitignored.
+- History/source reviewed for common credential patterns before publication; no matches found.
 
-- Created/verified private GitHub repository; used conventional atomic commits.
-- Reproduced and fixed actual build bug: `pairedDevices()` returns `[Any]!` and needs a checked device cast. The placeholder did not cause that compiler error.
-- Implemented main-run-loop IOKit general-interest notification on `IOPMrootDomain`, using the public clamshell message and initial registry property.
-- Added pure transition policy and 3 passing Swift Testing tests for initial closed state, duplicate events, pause/re-enable, and unknown state.
-- Full executable builds successfully using Xcode 27.1.
-- Bluetooth controller runs on a separate actor; resolves selected normalized addresses against the current paired list before calling only `closeConnection()`.
-- After a single disconnect attempt, observes connection at ~1, 3, 8 seconds; records API failures, persistent connection or observed reconnection. No forced retry or controller power changes.
-- Settings default to paused and store validated device addresses. 5 unit tests now pass, including settings round trip/corrupt data and address normalization.
-- Implemented SwiftUI `MenuBarExtra` with device selection, pause/enable, manual disconnect, bounded result observation, recent events/copy diagnostics, Bluetooth permission request, and `SMAppService.mainApp` login-item controls.
-- Added `--probe-lid [seconds]` read-only diagnostics mode, which never invokes Bluetooth or modifies sleep behavior.
-- Actually verified on host: `swift run LidDisconnect --probe-lid 2` successfully registered IOKit notifications and read `physical_lid=open` at 2026-10-18T14:59:36Z. No close/open transition has been induced yet.
-- Generated `dist/LidDisconnect.app`; `plutil -lint` and `codesign --verify --strict --verbose=2` passed.
-- Launched the bundle with `open`; confirmed its exact process path remained running after approximately one minute. This verifies launch/process survival, not the visible UI.
+## Tests and evidence
 
-## Not completed
-
-- Human-visible menu rendering and Bluetooth permission flow: computer-use inspection failed twice with server timeout `-10005`; no successful visual assertion.
-- Read paired devices in the authorized app, manually confirm Cleer ARC II identity, test real audio/baseband disconnection and release of its multipoint connection slot.
-- Real close/open transitions with Amphetamine both enabled and disabled; confirm duplicate-event behavior and lack of unrelated sleep/display triggers.
-- Reconnection behavior beyond the bounded sample window; actual login relaunch and Gatekeeper behavior on another machine.
-- Formal release signing/notarization/distribution and wider macOS compatibility.
-
-## Technical decisions
-
-- Separate main-actor UI/lid monitoring, background Bluetooth actor, and pure testable core. No third-party abstraction layer is needed for v0.1.
-- Use device address/identifier rather than display name as the persisted identity.
-- Never implement controller-wide Bluetooth power changes.
-- `CPlatform` is a tiny C bridge for the public SDK macro `kIOPMMessageClamshellStateChange`, which Swift cannot directly import. No private headers or hard-coded message numbers.
-- Treat compilation as compilation-only evidence; hardware behavior requires explicit real-device testing.
-- Default paused, no selected devices. Initial closed state never triggers a disconnect. Enabling while closed requires a later physical open→closed transition.
-- Only user-selected addresses are resolved against the current paired list. No disconnection is performed by the agent before user device selection.
-- A failed API call, persistent connection or observed reconnect pauses automatic operation and stops the batch. Investigate and ask the user before changing the public-API design if hardware tests fail.
-- No continuous polling: lid events are notification-based; device list refresh is user/UI/operation driven; post-disconnect observations are bounded to ~1, 3, 8 seconds.
-- Packaged local app is ad-hoc signed. No sandbox entitlement or elevated system privilege is requested by the app. OS Bluetooth permission is requested explicitly by the user.
-
-## Known limitations
-
-- Hardware feasibility remains pending; current code is a validation build, not a certified Cleer ARC II integration.
-- No actual physical close event or Bluetooth disconnect was initiated during development.
-- Public `closeConnection()` is synchronous; it runs off the main actor but cannot be forcibly interrupted. Pause cancels subsequent work and observations, not an already issued call.
-- Bounded connection snapshots cannot rule out very brief or later reconnects, nor prove an earphone multipoint slot was released. Check the headphone and second device.
-- Local ad-hoc signatures may require fresh permission approval after rebuild; stable Developer ID signing is future work.
-
-## Test status
-
-| Classification | Evidence |
+| Classification | Result |
 | --- | --- |
-| Actually verified | Xcode selected; initial physical lid open state; notification registration; signed bundle launch and process survival |
-| Compile/unit verified | `swift build`; `swift test` with 5 passed tests; all SwiftUI/IOKit/IOBluetooth/ServiceManagement code builds |
-| Packaging verified | `bash -n scripts/build-app.sh`; `bash scripts/build-app.sh`; plist validation; strict code-signature verification |
-| Not verified | Actual close/open transitions, Amphetamine interaction, paired listing under app permission, Cleer ARC II disconnect/audio slot release/reconnect, visible UI, login relaunch |
-| Known failure | Initial paired-device cast bug fixed; computer-use server unavailable for UI inspection |
+| Actually verified | Public lid notification registration; initial physical_lid=open from host and read-only DMG executable probe |
+| Build/unit verified | swift build and swift test, 9 tests passed on Xcode 27.1 |
+| Translation verified | All 8 tables share all 66 keys/placeholders; detection, saved override and semantic history re-render tested |
+| Universal build verified | arm64 + x86_64 Mach-O slices; each verified via lipo; vtool reports minos 14.0 for both |
+| App/resource verified | plist, deep strict codesign verification; --check-localizations from packaged app, DMG and extracted ZIP all pass without depending on developer build paths |
+| Artifact verified | hdiutil verify DMG; read-only mount contains App, Applications symlink, INSTALL.txt, LICENSE/NOTICE; ZIP unpack/signature/localizations verified; SHA-256 checks pass |
+| Previous launch smoke | v0.1 app launched and survived; v1.0 actual visible UI/hardware acceptance still pending |
+| Not verified | Cleer ARC II audio/multipoint slot release/reconnect, actual lid transitions with Amphetamine, hardware Bluetooth connect/disconnect notification delivery, login relaunch, Intel/macOS 14 runtime, downloaded Gatekeeper flow |
 
-Hardware acceptance method: follow README's first-use steps. First manual disconnect while paused; verify on Mac, headphone and iPhone/iPad; reconnect manually, enable automation, test actual lid events with Amphetamine. If public API demonstrably fails, stop that feature's release work, document evidence and await the user's decision.
+Known resolved packaging issue: this Xcode lipo rejected multiple architectures in one -verify_arch call; script now verifies arm64 and x86_64 separately. SDK warns x86_64 is deprecated but both slices build; macOS 14 runtime compatibility remains untested. hdiutil is deprecated on this beta but produced verified images; kept for older macOS build-tool compatibility.
 
-Environment note: this Codex sandbox restricts `.git`, compiler caches and external access. Use approved `require_escalated` commands for git writes/builds/push. Do not advise `chmod 777` or misreport a sandbox-only authentication error as proof that the user's CLI is broken.
+Computer-use server timed out in prior work, so no fabricated visual/UI assertion. Verification probes do not invoke Bluetooth disconnection.
 
-## Recent Git commit
+## Generated release artifacts
 
-- `32b56c6 fix: cast paired Bluetooth devices to native device type`
-- `dae2b44 feat: monitor physical lid transitions with public IOKit notifications`
-- `0ce6566 feat: validate selected Bluetooth disconnections off the main thread`
-- `3dd1138 feat: add native menu bar controls and feasibility diagnostics`
+- build/LidDisconnect.app
+- build/LidDisconnect-v1.0.0-macOS-Universal.dmg
+- build/LidDisconnect-v1.0.0-macOS-Universal.zip
+- build/SHA256SUMS.txt
 
-This packaging/documentation work unit includes the final handoff; obtain its hash with `git log -1 --oneline` after commit. No history was rewritten.
+Do not commit artifacts; upload them to GitHub release v1.0.0 using docs/releases/v1.0.0.md. Read-only verification mount was detached; extracted ZIP remains under ignored build/verification/.
 
-## Next recommended action
+## Recent Git commits
 
-The app is already running from `dist/LidDisconnect.app`. Have the user click the menu bar pause icon, authorize Bluetooth and confirm/select Cleer ARC II by name AND address, then run the manual disconnect test before enabling automatic physical-lid disconnection. Report/copied logs must distinguish an API return, observed link state and actual headphone slot release. For rebuilding: `bash scripts/build-app.sh`; for starting: `open dist/LidDisconnect.app`.
+- dc1986a feat: refresh Bluetooth devices on connection events
+- ec40bb0 feat: localize the entire interface in eight languages
+- 3c37db7 docs: adopt Apache-2.0 and bilingual project documentation
+- Previous v0.1 delivery: 5faf67b (and earlier atomic commits)
+- Current packaging/CI work unit updates this file; obtain its commit hash via git log after commit.
+
+## Remaining actions
+
+1. Commit inspected packaging/CI files, make existing repository public with explicitly authorized gh repo edit, push, publish release v1.0.0 with DMG/ZIP/checksums.
+2. Verify public visibility, license recognition, asset metadata/download availability and CI.
+3. Update this handoff with publication URLs/outcome.
+4. User hardware acceptance: run manual test while paused after confirming headphone name/address; then test real lid closure under their existing Amphetamine configuration. Public API failures require evidence/limitations and user decision before any change of approach.
+
+Rebuild/start: bash scripts/build-app.sh; open build/LidDisconnect.app. Release: bash scripts/build-release.sh. The old v0.1 dist/ bundle may still be running; do not mistake its process/UI for v1.0.

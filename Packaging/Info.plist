@@ -2,18 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key><string>zh_TW</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleExecutable</key><string>LidDisconnect</string>
     <key>CFBundleIdentifier</key><string>com.soda916.LidDisconnect</string>
     <key>CFBundleName</key><string>LidDisconnect</string>
     <key>CFBundleDisplayName</key><string>LidDisconnect</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>0.1.0</string>
-    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleShortVersionString</key><string>1.0.0</string>
+    <key>CFBundleVersion</key><string>100</string>
+    <key>NSHumanReadableCopyright</key><string>Copyright 2026 Soda916 and the LidDisconnect contributors. Apache-2.0.</string>
+    <key>CFBundleLocalizations</key>
+    <array><string>en</string><string>zh-Hant</string><string>zh-Hans</string><string>ja</string><string>ko</string><string>de</string><string>fr</string><string>es</string></array>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>LidDisconnect 需要讀取已配對裝置，並在您測試或闔蓋時中斷您指定的藍牙裝置連線。</string>
+    <string>LidDisconnect needs access to paired devices to disconnect only those you select when you test or close the lid.</string>
 </dict>
 </plist>

@@ -1,0 +1,19 @@
+LidDisconnect 1.0.0 — macOS 14+
+
+English
+1. Drag LidDisconnect.app to Applications, eject this disk, then open the app from Applications.
+2. If blocked as an unidentified developer, attempt opening first, then go to System Settings > Privacy & Security > Open Anyway for LidDisconnect. Confirm only if you trust the download.
+3. Allow Bluetooth access. Keep automation paused, select your headphones by name AND address, then test disconnection before enabling automatic lid-close behavior.
+4. Language selection is immediately left of Quit; Automatic follows macOS.
+
+繁體中文
+1. 將 LidDisconnect.app 拖到 Applications，退出映像檔，再從 Applications 開啟。
+2. 若因未經認證的開發者而被阻擋，先嘗試開啟，再到「系統設定 > 隱私權與安全性 > 仍要打開」針對 LidDisconnect 確認。只在信任下載來源時操作。
+3. 允許藍牙存取，保持暫停，依名稱與地址選取耳機，先測試斷線，再啟用闔蓋自動斷線。
+4. 語言選單在「結束」左側，「自動」跟隨 macOS。
+
+This app is ad-hoc signed, not Developer ID signed or notarized. Do not disable Gatekeeper or SIP globally.
+本程式使用 ad-hoc 簽章，未經 Developer ID 簽署或 Apple 公證。請勿整體停用 Gatekeeper 或 SIP。
+Apple: https://support.apple.com/en-us/102445
+Downloads / 原始碼: https://github.com/Soda916/LidDisconnect
+License: Apache-2.0 (LICENSE and NOTICE included)
