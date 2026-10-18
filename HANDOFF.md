@@ -32,6 +32,9 @@ Phase 1 — feasibility validation; v0.1 implementation underway.
 - Implemented main-run-loop IOKit general-interest notification on `IOPMrootDomain`, using the public clamshell message and initial registry property.
 - Added pure transition policy and 3 passing Swift Testing tests for initial closed state, duplicate events, pause/re-enable, and unknown state.
 - Full executable builds successfully using Xcode 27.1.
+- Bluetooth controller runs on a separate actor; resolves selected normalized addresses against the current paired list before calling only `closeConnection()`.
+- After a single disconnect attempt, observes connection at ~1, 3, 8 seconds; records API failures, persistent connection or observed reconnection. No forced retry or controller power changes.
+- Settings default to paused and store validated device addresses. 5 unit tests now pass, including settings round trip/corrupt data and address normalization.
 
 ## Not completed
 
@@ -65,7 +68,7 @@ Phase 1 — feasibility validation; v0.1 implementation underway.
 
 ## Recent Git commit
 
-`32b56c6 fix: cast paired Bluetooth devices to native device type`; this work unit adds tested physical-lid event handling.
+`dae2b44 feat: monitor physical lid transitions with public IOKit notifications`; this work unit adds background Bluetooth validation and persisted device identity.
 
 ## Next recommended action
 
