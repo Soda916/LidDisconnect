@@ -77,9 +77,17 @@ public struct Localizer: Sendable {
     }
 
     private var bundle: Bundle {
-        guard let path = Self.resources.path(forResource: language.rawValue, ofType: "lproj"),
-              let bundle = Bundle(path: path) else { return Self.resources }
+        // SwiftPM versions differ in how they normalize .lproj directory names.
+        // Ask Foundation for the language's actual resource URL instead of guessing its path.
+        guard let url = Self.resources.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: language.rawValue),
+              let bundle = Bundle(url: url.deletingLastPathComponent()) else { return Self.resources }
         return bundle
+    }
+
+    public var resourcesAreValid: Bool {
+        guard let entries = try? Self.entries(language), let english = try? Self.entries(.english),
+              Set(entries.keys) == Set(english.keys), !entries.isEmpty else { return false }
+        return entries.allSatisfy { text($0.key) == $0.value }
     }
 
     private static var resources: Bundle {
@@ -94,7 +102,12 @@ public struct Localizer: Sendable {
 
     // Internal access for completeness/placeholder tests against every translation.
     static func entries(_ language: AppLanguage) throws -> [String: String] {
-        let url = resources.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: language.rawValue)!
-        return try PropertyListSerialization.propertyList(from: Data(contentsOf: url), format: nil) as! [String: String]
+        guard let url = resources.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: language.rawValue) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        guard let entries = try PropertyListSerialization.propertyList(from: Data(contentsOf: url), format: nil) as? [String: String] else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return entries
     }
 }

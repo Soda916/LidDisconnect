@@ -61,6 +61,8 @@ The follow-up narrows CONTRIBUTING priorities to security and performance only. 
 
 ## Tests and evidence
 
+Post-release CI also exposed older SwiftPM lowercasing/normalizing localization directories. Source now resolves each actual localized resource URL through Foundation. Tests and --check-localizations compare every rendered value to its translation table, so silent English fallback cannot pass. Local v1.0.0 assets built with Xcode 27.1 had already loaded the correct language values; published tag/assets are not overwritten.
+
 | Classification | Result |
 | --- | --- |
 | Actually verified | Public lid notification registration; initial physical_lid=open from host and read-only DMG executable probe |

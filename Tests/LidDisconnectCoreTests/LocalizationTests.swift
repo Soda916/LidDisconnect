@@ -23,8 +23,9 @@ import Testing
         for (key, value) in entries {
             #expect(!value.isEmpty)
             #expect(value.components(separatedBy: "%@").count == english[key]!.components(separatedBy: "%@").count)
-            #expect(Localizer(language: language).text(key) != key)
+            #expect(Localizer(language: language).text(key) == value)
         }
+        #expect(Localizer(language: language).resourcesAreValid)
     }
 }
 

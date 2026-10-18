@@ -9,8 +9,9 @@ enum EntryPoint {
             LidDiagnostics.run()
         } else if CommandLine.arguments.contains("--check-localizations") {
             for language in AppLanguage.allCases where language != .automatic {
-                let value = Localizer(language: language).text("quit")
-                guard value != "quit" else { print("Missing localization: \(language.rawValue)"); exit(1) }
+                let localizer = Localizer(language: language)
+                let value = localizer.text("quit")
+                guard localizer.resourcesAreValid else { print("Missing localization: \(language.rawValue)"); exit(1) }
                 print("\(language.rawValue): \(value)")
             }
         } else {

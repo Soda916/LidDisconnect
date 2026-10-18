@@ -5,6 +5,7 @@
 ## Unreleased
 
 - Source compatibility: spell optional Bool switch patterns explicitly for older Swift 6 compilers. No runtime behavior change; the v1.0.0 artifacts were built successfully with Swift 6.4 and are unchanged.
+- Source-build resource compatibility: resolve the actual localized file URL for older SwiftPM layouts; verify rendered values against all translated tables rather than allowing silent English fallback.
 
 ## 1.0.0 — 2026-10-18
 
