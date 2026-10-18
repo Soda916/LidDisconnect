@@ -29,6 +29,9 @@ Phase 1 — feasibility validation; v0.1 implementation underway.
 - Created this handoff document.
 - Added initial SwiftPM/AppKit/IOKit/IOBluetooth prototype sources.
 - No hardware or physical-lid behavior has been tested yet.
+- Implemented main-run-loop IOKit general-interest notification on `IOPMrootDomain`, using the public clamshell message and initial registry property.
+- Added pure transition policy and 3 passing Swift Testing tests for initial closed state, duplicate events, pause/re-enable, and unknown state.
+- Full executable builds successfully using Xcode 27.1.
 
 ## Not completed
 
@@ -43,12 +46,12 @@ Phase 1 — feasibility validation; v0.1 implementation underway.
 - Keep lid sensing and Bluetooth control behind separate protocols so hardware-dependent behavior can be tested or replaced without coupling the UI.
 - Use device address/identifier rather than display name as the persisted identity.
 - Never implement controller-wide Bluetooth power changes.
+- `CPlatform` is a tiny C bridge for the public SDK macro `kIOPMMessageClamshellStateChange`, which Swift cannot directly import. No private headers or hard-coded message numbers.
 - Treat compilation as compilation-only evidence; hardware behavior requires explicit real-device testing.
 
 ## Known limitations
 
-- The current machine lacks full Xcode, so an Xcode project and AppKit/IOKit integration cannot yet be validated end-to-end.
-- Command Line Tools may not provide all frameworks or entitlements needed for a menu bar app.
+- Hardware feasibility remains pending; current code is a validation build, not a certified Cleer ARC II integration.
 - No claims about physical lid reliability or Bluetooth disconnection are validated yet.
 
 ## Test status
@@ -57,12 +60,13 @@ Phase 1 — feasibility validation; v0.1 implementation underway.
 - Source compilation reproduced an actual bug: `pairedDevices()` returns `[Any]!`; added a checked cast to `IOBluetoothDevice`. Placeholder methods were not the compiler error.
 - Restricted execution cannot access compiler caches; use approved elevated build execution.
 - Not verified: all lid, sleep-prevention, Bluetooth, reconnection, and UI behavior.
-- Known failures: GitHub authentication is invalid in the current shell; `xcodebuild` is unavailable with the active developer directory; build has not reached source compilation.
+- Compile verified: `swift test` (3 tests passed) and `swift build` passed on 2026-10-18.
+- Known failures: initial `[Any]` cast bug fixed; private repository and authentication were verified using elevated execution in the prior session.
 
 ## Recent Git commit
 
-`0a81210 chore: bootstrap native macOS app` (pushed to private origin/main).
+`32b56c6 fix: cast paired Bluetooth devices to native device type`; this work unit adds tested physical-lid event handling.
 
 ## Next recommended action
 
-Make `gh auth status` succeed, verify the remote is private, commit and push the bootstrap, then install/select a matching full Xcode toolchain and perform the physical-lid and Cleer ARC II tests on the target MacBook.
+Build the v0.1 validation menu UI and signed app bundle; inspect current lid state, then have the user explicitly select and test Cleer ARC II before enabling automation.

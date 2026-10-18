@@ -1,9 +1,13 @@
 import AppKit
+import LidDisconnectCore
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let lidMonitor = LidStateMonitor()
     private let bluetoothManager = BluetoothManager()
+    private var policy = LidPolicy()
+    private var enabled = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -17,15 +21,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
 
         lidMonitor.onStateChange = { [weak self] isClosed in
-            guard isClosed else { return }
-            self?.disconnectConfiguredDevices()
+            guard let self, self.policy.receive(isClosed: isClosed, enabled: self.enabled) else { return }
+            self.disconnectConfiguredDevices()
         }
         lidMonitor.start()
     }
 
     @objc private func toggleEnabled(_ item: NSMenuItem) {
         item.state = item.state == .on ? .off : .on
-        lidMonitor.isEnabled = item.state == .on
+        enabled = item.state == .on
     }
 
     private func disconnectConfiguredDevices() {
@@ -34,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func quit() {
+        lidMonitor.stop()
         NSApplication.shared.terminate(nil)
     }
 }
